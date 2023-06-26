@@ -13,11 +13,19 @@ class DetailsScreen extends StatefulWidget {
 }
 
 class _DetailsScreenState extends State<DetailsScreen> {
-  late DetailComicModel detail;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final comicProvider = Provider.of<ComicProvider>(context, listen: false);
+    final Comic comic = ModalRoute.of(context)!.settings.arguments as Comic;
+    comicProvider.getComicDetails(comic.apiDetailUrl!);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final comicProvider = Provider.of<ComicProvider>(context);
     final Comic comic = ModalRoute.of(context)!.settings.arguments as Comic;
+    final detail = comicProvider.details[comic.apiDetailUrl!];
 
     return Scaffold(
       body: CustomScrollView(
@@ -26,11 +34,12 @@ class _DetailsScreenState extends State<DetailsScreen> {
           SliverList(
             delegate: SliverChildListDelegate(
               [
-                _Description(),
-                _Characters(),
-                _TeamCredits(),
-                _Locations(),
-                _Concepts(),
+                if (detail != null) ...[
+                  _Description(detail: detail),
+                  _Characters(detail: detail),
+                  _Locations(detail: detail),
+                  _Concepts(detail: detail),
+                ],
               ],
             ),
           ),
@@ -78,28 +87,30 @@ class _CustomAppBar extends StatelessWidget {
 }
 
 class _Description extends StatelessWidget {
+  final DetailComicModel detail;
+
+  const _Description({Key? key, required this.detail}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
-    final comicProvider = Provider.of<ComicProvider>(context);
-    final details = comicProvider.details;
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      child: details.isNotEmpty
+      child: detail.results!.description != null
           ? Html(
-              data: details[0].results!.description!,
+              data: detail.results!.description!,
             )
-          : Container(),
+          : const Text('No description available'),
     );
   }
 }
 
 class _Characters extends StatelessWidget {
+  final DetailComicModel detail;
+
+  const _Characters({Key? key, required this.detail}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
-    final comicProvider = Provider.of<ComicProvider>(context);
-    final details = comicProvider.details;
-
     return Padding(
       padding: const EdgeInsets.all(20.0),
       child: Column(
@@ -107,71 +118,37 @@ class _Characters extends StatelessWidget {
         children: [
           Text(
             'Character Credits:',
-            style: Theme.of(context).textTheme.titleMedium,
+            style: Theme.of(context).textTheme.titleLarge,
           ),
-          const SizedBox(height: 5),
-          if (details != null && details.isNotEmpty && details[0].results != null)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: details[0].results!.characterCredits!
-                  .map(
-                    (character) => Text(
-                      character.name!,
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                  )
-                  .toList(),
-            ),
+          const SizedBox(height: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: detail.results!.characterCredits!.isNotEmpty
+                ? detail.results!.characterCredits!
+                    .map(
+                      (character) => Text(
+                        character.name ?? 'No data available',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    )
+                    .toList()
+                : [const Text('No data available')],
+          ),
         ],
       ),
     );
   }
 }
 
-class _TeamCredits extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final comicProvider = Provider.of<ComicProvider>(context);
-    final details = comicProvider.details;
 
-    return Padding(
-      padding: const EdgeInsets.all(20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Team Credits:',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 5),
-          if (details != null && details.isNotEmpty && details[0].results != null)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: details[0].results!.teamCredits!.isNotEmpty
-                  ? details[0].results!.teamCredits!
-                      .map(
-                        (team) => Text(
-                          team.name!,
-                          style: Theme.of(context).textTheme.bodyLarge,
-                        ),
-                      )
-                      .toList()
-                  : [ const Text('No teams for this comic')],
-            ),
-          if (details != null && details.isNotEmpty && details[0].results != null)
-            const SizedBox(height: 20),
-        ],
-      ),
-    );
-  }
-}
 
 class _Locations extends StatelessWidget {
+  final DetailComicModel detail;
+
+  const _Locations({Key? key, required this.detail}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
-    final comicProvider = Provider.of<ComicProvider>(context);
-    final details = comicProvider.details;
-
     return Padding(
       padding: const EdgeInsets.all(20.0),
       child: Column(
@@ -179,38 +156,35 @@ class _Locations extends StatelessWidget {
         children: [
           Text(
             'Locations:',
-            style: Theme.of(context).textTheme.titleMedium,
+            style: Theme.of(context).textTheme.titleLarge,
           ),
-          const SizedBox(height: 5),
-          if (details != null && details.isNotEmpty && details[0].results != null)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: details[0].results!.locationCredits!.isNotEmpty
-                  ? details[0].results!.locationCredits!
-                      .map(
-                        (location) => Text(
-                          location.name!,
-                          style: Theme.of(context).textTheme.bodyLarge,
-                        ),
-                      )
-                      .toList()
-                  : [ const Text('No locations for this comic')],
-            ),
-          if (details != null && details.isNotEmpty && details[0].results != null)
-            const SizedBox(height: 20),
+          const SizedBox(height: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: detail.results!.locationCredits!.isNotEmpty
+                ? detail.results!.locationCredits!
+                    .map(
+                      (location) => Text(
+                        location.name ?? 'No data available',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    )
+                    .toList()
+                : [const Text('No data available')],
+          ),
         ],
       ),
     );
   }
 }
 
-
 class _Concepts extends StatelessWidget {
+  final DetailComicModel detail;
+
+  const _Concepts({Key? key, required this.detail}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
-    final comicProvider = Provider.of<ComicProvider>(context);
-    final details = comicProvider.details;
-
     return Padding(
       padding: const EdgeInsets.all(20.0),
       child: Column(
@@ -218,38 +192,24 @@ class _Concepts extends StatelessWidget {
         children: [
           Text(
             'Concepts:',
-            style: Theme.of(context).textTheme.titleMedium,
+            style: Theme.of(context).textTheme.titleLarge,
           ),
-          const SizedBox(height: 5),
-          if (details != null && details.isNotEmpty && details[0].results != null)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: details[0].results!.conceptCredits!.isNotEmpty
-                  ? details[0].results!.conceptCredits!
-                      .map(
-                        (concept) => Text(
-                          concept.name!,
-                          style: Theme.of(context).textTheme.bodyLarge,
-                        ),
-                      )
-                      .toList()
-                  : [ const Text('No concept for this comic')],
-            ),
-          if (details != null && details.isNotEmpty && details[0].results != null)
-            const SizedBox(height: 20),
+          const SizedBox(height: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: detail.results!.conceptCredits!.isNotEmpty
+                ? detail.results!.conceptCredits!
+                    .map(
+                      (concept) => Text(
+                        concept.name ?? 'No data available',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    )
+                    .toList()
+                : [const Text('No data available')],
+          ),
         ],
       ),
     );
   }
 }
-
-
-
-
-
-
-
-
-
-
-

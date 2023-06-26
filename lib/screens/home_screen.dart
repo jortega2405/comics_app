@@ -1,4 +1,5 @@
 import 'package:comics_app/providers/comic_provider.dart';
+import 'package:comics_app/search/search_delegate.dart';
 import 'package:comics_app/widgets/card_swiper.dart';
 import 'package:comics_app/widgets/comic_slider.dart';
 import 'package:flutter/material.dart';
@@ -28,6 +29,13 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Comic App'),
+        actions: [
+          IconButton(
+              onPressed: () {
+                showSearch(context: context, delegate: ComicSearchDelegate());
+              },
+              icon: const Icon(Icons.search_outlined)),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
